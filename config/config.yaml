@@ -1,0 +1,21 @@
+exchange: kraken
+spot: true
+symbols:
+  - BTC/USDT
+  - ETH/USDT
+
+timeframe: 15m
+lookback_bars: 600
+
+risk:
+  equity: 10000
+  risk_pct: 0.75   # percent of equity per trade
+  atr_mult: 1.0     # for stop distance baseline
+
+strategies:
+  - pullback
+  - breakout
+
+fees:
+  taker_bps: 10    # basis points per side (0.1%)
+  maker_bps: 8
