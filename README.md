@@ -1,40 +1,62 @@
-# Aussie Add-ons repository for Kodi
+# Инструменты для внутридневной спот‑торговли крипты
 
-http://aussieaddons.com/installation
+Состав:
+- Чек‑лист: `checklists/intraday_checklist.md`
+- Скринер сигналов: `screener.py`
+- Простой бэктест: `backtest.py`
+- Торговый бот (Bybit, spot): `bot.py`
+- Конфиг: `config/config.yaml`
+- Шаблон журнала: `journal_template.csv`
 
-We're maintaining a repository of Kodi add-ons for Australian content, including all free-to-air Catch-up TV services and others including AFL, NRL and Netball and BigPond Movies.
+## Установка
+```bash
+python3 -m pip install -r /workspace/requirements.txt --break-system-packages
+```
 
+## Скринер
+```bash
+python3 /workspace/screener.py --config /workspace/config/config.yaml
+```
+Вывод сохраняется в `/workspace/output/`.
 
-## Installation
-Follow the Aussie Add-ons repository [installation guide](http://aussieaddons.com/installation/) to set
-up the Aussie Add-ons repository.
+## Бэктест
+```bash
+python3 /workspace/backtest.py --exchange kraken --symbol BTC/USDT --timeframe 15m --lookback 1200 --strategy pullback
+```
 
-Do **NOT** download the zip file from this GitHub repository or you will receive the error `Installing the Add-on from the zip file located at xxx failed due to an invalid structure.`
+## Торговый бот (Bybit, spot)
+1) Создайте API‑ключ на Bybit (Spot), включите разрешение на спот‑торговлю. Запишите `apiKey` и `secret`.
+2) Создайте телеграм‑бота через @BotFather, получите токен. Узнайте свой `chat_id` (например, через бота @userinfobot).
+3) Установите переменные окружения:
+```bash
+export BYBIT_API_KEY="ВАШ_API_KEY"
+export BYBIT_API_SECRET="ВАШ_SECRET"
+export TELEGRAM_BOT_TOKEN="ВАШ_TG_TOKEN"
+export TELEGRAM_CHAT_ID="ВАШ_CHAT_ID"
+```
+4) Отредактируйте `config/config.yaml` при необходимости:
+- `trading.per_order_usd`: сумма одной покупки (минимум $5)
+- `trading.max_budget_per_symbol`: общий бюджет на монету (с учётом DCA)
+- `trading.max_open_positions`: максимум одновременно открытых монет
+- `universe.*`: отбор монет (по объёму, количеству)
+5) Запуск:
+```bash
+python3 /workspace/bot.py
+```
+Бот:
+- Сам выбирает ликвидные пары USDT (по объёму) и использует 15m таймфрейм
+- Покупает маркетом на сигналах (pullback/breakout в ап‑тренде)
+- Докупает (DCA) на ступенях −0.5/−1.0/−1.5×ATR, пока не исчерпан бюджет на монету
+- Выходит по трейлингу (2×ATR) и/или если цена уходит ниже EMA(200)
+- Шлёт уведомления в Telegram (старт, вход, докупка, выход, ошибки)
 
-Once the repository is installed, you can install the any of our add-ons through the Kodi Add-on manager by accessing the menus:
+Фоновой запуск:
+```bash
+nohup python3 /workspace/bot.py >/workspace/output/bot.log 2>&1 &
+```
+Остановить (найдите PID через `ps aux | grep bot.py` и `kill PID`).
 
- * System ->
- * Settings ->
- * Add-ons ->
- * Install from repository ->
- * Aussie Add-ons (or XBMC CatchupTV AU Add-ons) ->
- * Video add-ons ->
- * _your desired add-on_ ->
- * Install
+Важно: храните ключи в переменных окружения, не в гите. Все риски на вашей стороне; торговля высокорискованна.
 
-
-The Kodi wiki also has a nice guide on [installing Add-ons via the Add-on manager](http://kodi.wiki/view/Add-on_manager).
-
-
-## Issues
-
-For any issues or bug reports, please file them on the [issues page](https://github.com/andybotting/xbmc-addon-plus7/issues).
-
-Please include log output, if possible. Follow the [log upload guide](http://kodi.wiki/view/Log_file/Easy) and include the URL it gives you in your bug report.
-
-
-## Contact
-
-For help and support, feel free to register on our [Slack channel](http://slack-invite.aussieaddons.com/).
-
-Good luck and happy viewing.
+## Журнал
+Откройте `journal_template.csv` и ведите учёт после каждой сделки. Добавляйте ссылки на скриншоты и пометки об ошибках/улучшениях.
