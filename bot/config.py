@@ -45,6 +45,9 @@ class Settings:
     bybit_api_key: str
     bybit_api_secret: str
     bybit_subaccount: str
+    use_testnet: bool
+    http_proxy: str
+    https_proxy: str
     telegram_bot_token: str
     telegram_chat_id: str
     quote_asset: str
@@ -68,6 +71,9 @@ def load_settings() -> Settings:
         bybit_api_key=os.getenv("BYBIT_API_KEY", ""),
         bybit_api_secret=os.getenv("BYBIT_API_SECRET", ""),
         bybit_subaccount=os.getenv("BYBIT_SUBACCOUNT", ""),
+        use_testnet=_parse_bool(os.getenv("USE_TESTNET", "false"), False),
+        http_proxy=os.getenv("HTTP_PROXY", ""),
+        https_proxy=os.getenv("HTTPS_PROXY", ""),
         telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
         telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", ""),
         quote_asset=os.getenv("QUOTE_ASSET", "USDT").upper(),

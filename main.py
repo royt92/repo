@@ -23,6 +23,9 @@ def main() -> None:
         api_secret=settings.bybit_api_secret,
         subaccount=settings.bybit_subaccount,
         dry_run=settings.dry_run,
+        use_testnet=settings.use_testnet,
+        http_proxy=settings.http_proxy,
+        https_proxy=settings.https_proxy,
     )
     client.load_markets()
     orders = OrderManager(client)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import ccxt
 
@@ -27,16 +27,29 @@ class BybitClient:
         subaccount: str = "",
         enable_rate_limit: bool = True,
         dry_run: bool = True,
+        use_testnet: bool = False,
+        http_proxy: str = "",
+        https_proxy: str = "",
     ) -> None:
+        extra_headers = {"X-BB-Sub-Account-Id": subaccount} if subaccount else {}
+        proxies = None
+        if http_proxy or https_proxy:
+            proxies = {k: v for k, v in {"http": http_proxy or None, "https": https_proxy or None}.items() if v}
         self.exchange = ccxt.bybit(
             {
                 "apiKey": api_key,
                 "secret": api_secret,
                 "enableRateLimit": enable_rate_limit,
                 "options": {"defaultType": "spot"},
-                **({"headers": {"X-BB-Sub-Account-Id": subaccount}} if subaccount else {}),
+                **({"headers": extra_headers} if extra_headers else {}),
+                **({"proxies": proxies} if proxies else {}),
             }
         )
+        if use_testnet:
+            try:
+                self.exchange.set_sandbox_mode(True)
+            except Exception:
+                pass
         self.dry_run = dry_run
         self._markets: Dict[str, MarketInfo] = {}
 
@@ -50,7 +63,6 @@ class BybitClient:
                 continue
             precision_price = m.get("precision", {}).get("price", 4)
             precision_amount = m.get("precision", {}).get("amount", 4)
-            min_cost = 0.0
             limits = m.get("limits", {}) or {}
             cost = limits.get("cost") or {}
             min_cost = float(cost.get("min") or 0.0)
@@ -70,10 +82,7 @@ class BybitClient:
     def fetch_tickers(self) -> Dict[str, dict]:
         return self.exchange.fetch_tickers()
 
-    def fetch_ohlcv(
-        self, symbol: str, timeframe: str, limit: int = 200
-    ) -> List[List[float]]:
-        # ohlcv: [timestamp, open, high, low, close, volume]
+    def fetch_ohlcv(self, symbol: str, timeframe: str, limit: int = 200) -> List[List[float]]:
         return self.exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
 
     def fetch_balance(self) -> dict:
@@ -101,9 +110,8 @@ class BybitClient:
             }
         if order_type == "market":
             return self.exchange.create_market_order(symbol, side, amount, params or {})
-        else:
-            assert price is not None, "price required for limit orders"
-            return self.exchange.create_limit_order(symbol, side, amount, price, params or {})
+        assert price is not None, "price required for limit orders"
+        return self.exchange.create_limit_order(symbol, side, amount, price, params or {})
 
     def fetch_ticker(self, symbol: str) -> dict:
         return self.exchange.fetch_ticker(symbol)

@@ -25,4 +25,6 @@ Quick-start:
 Notes:
 - Dry-run prints Telegram messages to stdout and simulates orders without sending to Bybit.
 - In LIVE mode set `DRY_RUN=false` and provide valid API keys and Telegram token/chat id.
+- If you see 403 Forbidden on Bybit public endpoints, your region is blocked by CloudFront. Use `HTTP_PROXY`/`HTTPS_PROXY` in `.env` or run from an allowed region. You can also try `USE_TESTNET=true` (limited spot instruments).
 - Strategy: EMA(9/21) cross with RSI filter; TP/SL and DCA are configurable via env.
+- Environment variables are documented in `.env.example` (testnet, proxies, risk, DCA, loop period, etc.).
