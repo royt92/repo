@@ -1,1 +1,31 @@
-.cache
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+
+# Envs
+.venv/
+.env
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Builds / wheels
+build/
+dist/
+*.whl
+
+# Runtime state/logs
+state.json
+logs/
+
+# Caches
+*.cache/
+.cache/
