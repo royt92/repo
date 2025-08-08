@@ -43,6 +43,24 @@ class OrderManager:
         except Exception:
             pass
 
+    def _has_min_cost(self, symbol: str, usd_amount: float) -> bool:
+        mkt = self.client.get_market(symbol)
+        if not mkt:
+            return True
+        return usd_amount >= max(mkt.min_cost, 5.0)
+
+    def _has_balance(self, quote: str, usd_amount: float) -> bool:
+        try:
+            bal = self.client.fetch_balance()
+            free = 0.0
+            if isinstance(bal, dict):
+                acct = bal.get(quote) or {}
+                free_map = (bal.get("free", {}) or {})
+                free = float(free_map.get(quote, acct.get("free", 0.0)) or 0.0)
+            return free >= usd_amount or self.client.dry_run
+        except Exception:
+            return self.client.dry_run
+
     def open_position(
         self,
         symbol: str,
@@ -53,11 +71,20 @@ class OrderManager:
         price = self.client.market_price(symbol)
         if price <= 0:
             return None
+        if not self._has_min_cost(symbol, usd_amount):
+            return None
+        mkt = self.client.get_market(symbol)
+        quote = (mkt.quote if mkt else "USDT")
+        if not self._has_balance(quote, usd_amount):
+            return None
         qty = usd_amount / price
         qty = self.client.amount_to_precision(symbol, qty)
         if qty <= 0:
             return None
-        self.client.create_order(symbol, "buy", "market", qty)
+        try:
+            self.client.create_order(symbol, "buy", "market", qty)
+        except Exception:
+            return None
         pos = Position(
             symbol=symbol,
             avg_price=price,
@@ -80,7 +107,10 @@ class OrderManager:
             return None
         gain_pct = (price - pos.avg_price) / pos.avg_price * 100.0
         if gain_pct >= pos.target_tp_pct:
-            self.client.create_order(symbol, "sell", "market", pos.quantity)
+            try:
+                self.client.create_order(symbol, "sell", "market", pos.quantity)
+            except Exception:
+                return None
             profit_usd = (price - pos.avg_price) * pos.quantity
             del self.positions[symbol]
             self._save()
@@ -96,7 +126,10 @@ class OrderManager:
             return False
         loss_pct = (pos.avg_price - price) / pos.avg_price * 100.0
         if loss_pct >= pos.stop_loss_pct:
-            self.client.create_order(symbol, "sell", "market", pos.quantity)
+            try:
+                self.client.create_order(symbol, "sell", "market", pos.quantity)
+            except Exception:
+                return False
             del self.positions[symbol]
             self._save()
             return True
@@ -116,11 +149,20 @@ class OrderManager:
         target_drop = dca_steps_down_pct[step_index]
         if drop_pct >= target_drop:
             usd = dca_allocations_usd[step_index]
+            if not self._has_min_cost(symbol, usd):
+                return None
+            mkt = self.client.get_market(symbol)
+            quote = (mkt.quote if mkt else "USDT")
+            if not self._has_balance(quote, usd):
+                return None
             add_qty = usd / price
             add_qty = self.client.amount_to_precision(symbol, add_qty)
             if add_qty <= 0:
                 return None
-            self.client.create_order(symbol, "buy", "market", add_qty)
+            try:
+                self.client.create_order(symbol, "buy", "market", add_qty)
+            except Exception:
+                return None
             new_qty = pos.quantity + add_qty
             pos.avg_price = (pos.avg_price * pos.quantity + price * add_qty) / new_qty
             pos.quantity = new_qty

@@ -79,6 +79,9 @@ class BybitClient:
         self._markets = result
         return result
 
+    def get_market(self, symbol: str) -> Optional[MarketInfo]:
+        return self._markets.get(symbol)
+
     def fetch_tickers(self) -> Dict[str, dict]:
         return self.exchange.fetch_tickers()
 
