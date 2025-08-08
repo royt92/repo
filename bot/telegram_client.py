@@ -12,8 +12,9 @@ class TelegramClient:
         self._base = f"https://api.telegram.org/bot{bot_token}" if bot_token else ""
 
     def send_message(self, text: str, disable_web_page_preview: bool = True) -> None:
+        # Always mirror to console for visibility
+        print(f"[TELEGRAM] {text}")
         if self.dry_run or not (self.bot_token and self.chat_id):
-            print(f"[TELEGRAM-DRY] {text}")
             return
         try:
             url = f"{self._base}/sendMessage"

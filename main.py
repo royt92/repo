@@ -44,7 +44,12 @@ def main() -> None:
             if isinstance(bal, dict):
                 acct = bal.get(quote) or {}
                 # some exchanges put balances under 'free' dict
-                free = float((bal.get('free', {}) or {}).get(quote, acct.get('free', 0.0)) or 0.0)
+                free_map = (bal.get('free', {}) or {})
+                total_map = (bal.get('total', {}) or {})
+                free = float(free_map.get(quote, acct.get('free', 0.0)) or 0.0)
+                total = float(total_map.get(quote, acct.get('total', 0.0)) or 0.0)
+                if free <= 0 and total > 0:
+                    free = total
             budget_usd = max(free, 0.0)
         except Exception as e:
             tg.send_message(f"Balance fetch failed, using configured budget: {e}")
