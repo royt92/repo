@@ -1,21 +1,18 @@
 from __future__ import annotations
 
-import json
-import time
-from typing import Optional
-
 import requests
 
 
 class TelegramClient:
-    def __init__(self, bot_token: str, chat_id: str, dry_run: bool = True) -> None:
+    def __init__(self, bot_token: str, chat_id: str, dry_run: bool = True, force_send: bool = False) -> None:
         self.bot_token = bot_token
         self.chat_id = chat_id
-        self.dry_run = dry_run or not (bot_token and chat_id)
+        self.force_send = force_send
+        self.dry_run = dry_run and not force_send
         self._base = f"https://api.telegram.org/bot{bot_token}" if bot_token else ""
 
     def send_message(self, text: str, disable_web_page_preview: bool = True) -> None:
-        if self.dry_run:
+        if self.dry_run or not (self.bot_token and self.chat_id):
             print(f"[TELEGRAM-DRY] {text}")
             return
         try:

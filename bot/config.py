@@ -50,8 +50,10 @@ class Settings:
     https_proxy: str
     telegram_bot_token: str
     telegram_chat_id: str
+    telegram_force_send: bool
     quote_asset: str
     base_budget_usd: float
+    auto_budget_from_balance: bool
     max_concurrent_positions: int
     risk_per_trade_pct: float
     take_profit_pct: float
@@ -76,8 +78,10 @@ def load_settings() -> Settings:
         https_proxy=os.getenv("HTTPS_PROXY", ""),
         telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
         telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", ""),
+        telegram_force_send=_parse_bool(os.getenv("TELEGRAM_FORCE_SEND", "false"), False),
         quote_asset=os.getenv("QUOTE_ASSET", "USDT").upper(),
         base_budget_usd=_parse_float(os.getenv("BASE_BUDGET_USD", "1000"), 1000.0),
+        auto_budget_from_balance=_parse_bool(os.getenv("AUTO_BUDGET_FROM_BALANCE", "false"), False),
         max_concurrent_positions=_parse_int(os.getenv("MAX_CONCURRENT_POSITIONS", "3"), 3),
         risk_per_trade_pct=_parse_float(os.getenv("RISK_PER_TRADE_PCT", "1.0"), 1.0),
         take_profit_pct=_parse_float(os.getenv("TAKE_PROFIT_PCT", "0.6"), 0.6),
