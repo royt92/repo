@@ -1,8 +1,8 @@
 import os
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 
 def _parse_bool(value: str, default: bool) -> bool:
@@ -63,10 +63,23 @@ class Settings:
     timeframe: str
     screen_top_n: int
     loop_sleep_seconds: int
+    dotenv_path: Optional[str]
 
 
 def load_settings() -> Settings:
-    load_dotenv()
+    # Try to load .env from CWD, then project root (two passes)
+    loaded_path = None
+    path1 = find_dotenv(usecwd=True)
+    if path1:
+        load_dotenv(dotenv_path=path1, override=False)
+        loaded_path = path1
+    # Project root (two levels up from this file: bot/ -> bot_skalp/)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    path2 = os.path.join(project_root, ".env")
+    if os.path.exists(path2):
+        load_dotenv(dotenv_path=path2, override=False)
+        loaded_path = loaded_path or path2
+
     return Settings(
         env=os.getenv("ENV", "dev"),
         dry_run=_parse_bool(os.getenv("DRY_RUN", "true"), True),
@@ -80,7 +93,7 @@ def load_settings() -> Settings:
         telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", ""),
         telegram_force_send=_parse_bool(os.getenv("TELEGRAM_FORCE_SEND", "false"), False),
         quote_asset=os.getenv("QUOTE_ASSET", "USDT").upper(),
-        base_budget_usd=_parse_float(os.getenv("BASE_BUDGET_USD", "1000"), 1000.0),
+        base_budget_usd=_parse_float(os.getenv("BASE_BUDGET_USD", "0"), 0.0),
         auto_budget_from_balance=_parse_bool(os.getenv("AUTO_BUDGET_FROM_BALANCE", "false"), False),
         max_concurrent_positions=_parse_int(os.getenv("MAX_CONCURRENT_POSITIONS", "3"), 3),
         risk_per_trade_pct=_parse_float(os.getenv("RISK_PER_TRADE_PCT", "1.0"), 1.0),
@@ -91,4 +104,5 @@ def load_settings() -> Settings:
         timeframe=os.getenv("TIMEFRAME", "1m"),
         screen_top_n=_parse_int(os.getenv("SCREEN_TOP_N", "20"), 20),
         loop_sleep_seconds=_parse_int(os.getenv("LOOP_SLEEP_SECONDS", "30"), 30),
+        dotenv_path=loaded_path,
     )

@@ -19,13 +19,17 @@ from bot.utils import fmt_pct, fmt_usd
 def main() -> None:
     logger = setup_logger(logging.INFO)
     settings = load_settings()
+    if settings.dotenv_path:
+        print(f"[CONFIG] Loaded .env from: {settings.dotenv_path}")
+    else:
+        print("[CONFIG] .env not found; using environment defaults")
     tg = TelegramClient(
         settings.telegram_bot_token,
         settings.telegram_chat_id,
         dry_run=settings.dry_run,
         force_send=settings.telegram_force_send,
     )
-    logger.info("Starting Bybit Spot Scalper | mode=%s | quote=%s | tf=%s", "DRY" if settings.dry_run else "LIVE", settings.quote_asset, settings.timeframe)
+    logger.info("Starting Bybit Spot Scalper | mode=%s | quote=%s | tf=%s | autobudget=%s | base_budget=%s", "DRY" if settings.dry_run else "LIVE", settings.quote_asset, settings.timeframe, settings.auto_budget_from_balance, fmt_usd(settings.base_budget_usd))
     client = BybitClient(
         api_key=settings.bybit_api_key,
         api_secret=settings.bybit_api_secret,
