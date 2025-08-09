@@ -1,62 +1,82 @@
-# Инструменты для внутридневной спот‑торговли крипты
+## Bybit Spot Scalper Bot (Async, Paper/Live)
 
-Состав:
-- Чек‑лист: `checklists/intraday_checklist.md`
-- Скринер сигналов: `screener.py`
-- Простой бэктест: `backtest.py`
-- Торговый бот (Bybit, spot): `bot.py`
-- Конфиг: `config/config.yaml`
-- Шаблон журнала: `journal_template.csv`
+Production-grade, async Python 3.11+ scalper bot for Bybit Spot with:
+- Accurate daily screening of 300+ USDT pairs (liquidity, spread, RVOL, trend/momentum)
+- Top-3 symbols trading concurrently
+- REST v5 + Public/Private WebSocket support (low latency)
+- Auto balance detection, risk-per-trade sizing, post-only orders with fallback
+- SQLite storage for orders/trades/state
+- Telegram notifications (startup, candidates, trades, exits, daily PnL)
+- Paper and live modes
+- Docker and tests
 
-## Установка
-```bash
-python3 -m pip install -r /workspace/requirements.txt --break-system-packages
+### Quick Start
+
+1) Clone and prepare env
+```
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
 ```
 
-## Скринер
-```bash
-python3 /workspace/screener.py --config /workspace/config/config.yaml
-```
-Вывод сохраняется в `/workspace/output/`.
+2) Fill `.env` (no API keys needed for paper/public data)
 
-## Бэктест
-```bash
-python3 /workspace/backtest.py --exchange kraken --symbol BTC/USDT --timeframe 15m --lookback 1200 --strategy pullback
+3) Run in paper mode
+```
+python -m src.app once
+python -m src.app daemon
 ```
 
-## Торговый бот (Bybit, spot)
-1) Создайте API‑ключ на Bybit (Spot), включите разрешение на спот‑торговлю. Запишите `apiKey` и `secret`.
-2) Создайте телеграм‑бота через @BotFather, получите токен. Узнайте свой `chat_id` (например, через бота @userinfobot).
-3) Установите переменные окружения:
-```bash
-export BYBIT_API_KEY="ВАШ_API_KEY"
-export BYBIT_API_SECRET="ВАШ_SECRET"
-export TELEGRAM_BOT_TOKEN="ВАШ_TG_TOKEN"
-export TELEGRAM_CHAT_ID="ВАШ_CHAT_ID"
+4) Backtest (simplified)
 ```
-4) Отредактируйте `config/config.yaml` при необходимости:
-- `trading.per_order_usd`: сумма одной покупки (минимум $5)
-- `trading.max_budget_per_symbol`: общий бюджет на монету (с учётом DCA)
-- `trading.max_open_positions`: максимум одновременно открытых монет
-- `universe.*`: отбор монет (по объёму, количеству)
-5) Запуск:
-```bash
-python3 /workspace/bot.py
+python -m src.app backtest --symbol BTCUSDT --days 30
 ```
-Бот:
-- Сам выбирает ликвидные пары USDT (по объёму) и использует 15m таймфрейм
-- Покупает маркетом на сигналах (pullback/breakout в ап‑тренде)
-- Докупает (DCA) на ступенях −0.5/−1.0/−1.5×ATR, пока не исчерпан бюджет на монету
-- Выходит по трейлингу (2×ATR) и/или если цена уходит ниже EMA(200)
-- Шлёт уведомления в Telegram (старт, вход, докупка, выход, ошибки)
 
-Фоновой запуск:
-```bash
-nohup python3 /workspace/bot.py >/workspace/output/bot.log 2>&1 &
+### Docker
 ```
-Остановить (найдите PID через `ps aux | grep bot.py` и `kill PID`).
+docker compose up --build -d
+```
 
-Важно: храните ключи в переменных окружения, не в гите. Все риски на вашей стороне; торговля высокорискованна.
+### .env
+```
+BYBIT_API_KEY=your_key
+BYBIT_API_SECRET=your_secret
+BYBIT_ENV=live
+TELEGRAM_BOT_TOKEN=your_token
+TELEGRAM_CHAT_ID=123456789
+MODE=paper
+RISK_PER_TRADE=0.003
+MAX_DAILY_LOSS=0.02
+MAX_CONCURRENT_SYMBOLS=3
+SCREENER_MIN_RVOL=1.5
+SCREENER_MAX_SPREAD_BP=8
+SCREENER_MIN_DEPTH_USDT=50000
+RESCAN_MINUTES=15
+TIMEFRAME=1m
+LOG_LEVEL=INFO
+```
 
-## Журнал
-Откройте `journal_template.csv` и ведите учёт после каждой сделки. Добавляйте ссылки на скриншоты и пометки об ошибках/улучшениях.
+### Strategy
+- Long-only trend/pullback: EMA20 > EMA50 > EMA200, price near EMA20 within ~0.25 ATR
+- Orderbook buy imbalance and recent tick volume spike
+- ATR-based SL/TP, default post-only; fallback to IOC/market
+
+### Screener
+- Filters: USDT spot only, spread ≤ threshold, depth ≥ threshold, RVOL ≥ min
+- Metrics: spread, depth, RVOL, ADX, EMA slope, tick imbalance
+- Weighted ranking and selection of top-3, re-scan every RESCAN_MINUTES
+
+### Risk Management
+- Risk-per-trade sizing (balance auto-detected in live, fixed 1000 USDT in paper)
+- Daily loss limit and losing-streak cooldown (basic)
+- Validate spread and liquidity before entry; lot/step and min notional enforced
+
+### Tests
+```
+pytest -q
+```
+
+### Notes
+- This project avoids hardcoding secrets. Use .env only.
+- WebSocket streams are wired in the client and ready for extension; executor uses REST for simplicity and robustness.
+- Backtest mode is a sanity-check scaffold; expand as needed.
