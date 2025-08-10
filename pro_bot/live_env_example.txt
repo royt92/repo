@@ -1,0 +1,33 @@
+# БОЕВОЙ РЕЖИМ - НАСТРОЙКИ ДЛЯ РЕАЛЬНОЙ ТОРГОВЛИ
+# ⚠️ ВНИМАНИЕ: ЭТО БОЕВОЙ РЕЖИМ С РЕАЛЬНЫМИ ДЕНЬГАМИ! ⚠️
+# Сохраните эти настройки в файл .env.live
+
+# Bybit API настройки
+BYBIT_API_KEY=biSs09FVqLH3zGM79H
+BYBIT_API_SECRET=rTSI3QywPzb4kQIPDfPHCbBBoof302tdxvj4
+BYBIT_ENV=live
+
+# Telegram уведомления
+TELEGRAM_BOT_TOKEN=7708752970:AAHm_U-LBrwx1FOSuCPjTH0BJ8UElLhOliw
+TELEGRAM_CHAT_ID=389193169
+
+# 🔴 БОЕВОЙ РЕЖИМ - РЕАЛЬНЫЕ СДЕЛКИ 🔴
+MODE=live
+
+# Риск-менеджмент (КОНСЕРВАТИВНЫЕ НАСТРОЙКИ)
+RISK_PER_TRADE=0.001
+MAX_DAILY_LOSS=0.01
+MAX_CONCURRENT_SYMBOLS=2
+
+# Скринер настройки (БОЛЕЕ СТРОГИЕ КРИТЕРИИ)
+SCREENER_MIN_RVOL=2.0
+SCREENER_MAX_SPREAD_BP=5.0
+SCREENER_MIN_DEPTH_USDT=100000.0
+RESCAN_MINUTES=10
+TIMEFRAME=1m
+
+# Логирование
+LOG_LEVEL=INFO
+
+
+
